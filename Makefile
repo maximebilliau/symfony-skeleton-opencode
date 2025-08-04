@@ -23,3 +23,9 @@ install: up composer
 
 bash:
 	$(EXECPHP) /bin/bash
+
+lint:
+	$(EXECPHP) vendor/bin/ecs --fix && vendor/bin/rector process && $(EXECPHP) vendor/bin/ecs --fix && $(EXECPHP) vendor/bin/phpstan.phar analyse src tests
+
+reset-db:
+	$(EXECPHP) bin/console doctrine:database:drop --force && $(EXECPHP) bin/console doctrine:database:create && $(EXECPHP) bin/console doctrine:schema:create

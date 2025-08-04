@@ -1,3 +1,25 @@
+/etc/build/*
+!/etc/build/.gitignore
+.idea/
+
+###> composer ###
+/auth.json
+###< composer ###
+
+###> dev ###
+/.ecs_cache
+###< dev ###
+
+###> test ###
+/drivers
+/.php-cs-fixer.cache
+###< test ###
+
+###> docker ###
+/compose.override.yaml
+/docker-dev.lock
+###< docker ###
+
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
@@ -6,19 +28,19 @@
 /public/bundles/
 /var/
 /vendor/
-/.idea/
 ###< symfony/framework-bundle ###
-
-###> friendsofphp/php-cs-fixer ###
-/.php-cs-fixer.php
-/.php-cs-fixer.cache
-###< friendsofphp/php-cs-fixer ###
-
-###> phpstan/phpstan ###
-phpstan.neon
-###< phpstan/phpstan ###
 
 ###> phpunit/phpunit ###
 /phpunit.xml
-/.phpunit.cache/
+.phpunit.result.cache
 ###< phpunit/phpunit ###
+
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+/config/jwt/*-test.pem
+!/config/jwt/.gitignore
+###< lexik/jwt-authentication-bundle ###
+
+###> translations ###
+/translations/
+###< translations ###

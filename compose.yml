@@ -12,14 +12,16 @@ services:
       - skeleton-network
 
   db:
-    image: postgres:15
+    image: postgres:16.6-bookworm
     container_name: skeleton_db
     volumes:
       - db_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: skeleton
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+    ports:
+        - ${APP_DATABASE_PORT:-5432}:5432
     networks:
       - skeleton-network
 
@@ -32,9 +34,11 @@ services:
     labels:
         - "traefik.enable=true"
         - "traefik.http.routers.symfony.rule=Host(`skeleton.localhost`)"  # Remplacez par votre domaine
-        - "traefik.http.services.symfony.loadbalancer.server.port=81"
+        - "traefik.http.services.symfony.loadbalancer.server.port=80"
     networks:
       - skeleton-network
+    depends_on:
+        -   php
 
   traefik:
       image: traefik:v2.10
@@ -42,10 +46,10 @@ services:
       command:
           - "--api.insecure=true"
           - "--providers.docker=true"
-          - "--entrypoints.web.address=:81"
+          - "--entrypoints.web.address=:80"
       ports:
-          - "81:80"
-          - "8081:8080"
+          - "80:80"
+          - "8080:8080"
       volumes:
           - "/var/run/docker.sock:/var/run/docker.sock"
       networks:
