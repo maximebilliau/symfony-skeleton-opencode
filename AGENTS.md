@@ -118,8 +118,6 @@ Separate all changes into two distinct types:
 ### Application Management
 - `php bin/console cache:clear` - Clear application cache
 - `php bin/console app:install` - Run application installer
-- `php bin/console assets:install` - Install public assets
-- `php bin/console importmap:install` - Install frontend dependencies
 
 ### JWT & Security
 - `php bin/console lexik:jwt:generate-keypair` - Generate JWT keypair
@@ -128,10 +126,6 @@ Separate all changes into two distinct types:
 ### Testing
 - `vendor/bin/phpunit` - Run unit tests
 - `vendor/bin/phpspec run` - Run specification tests
-- `vendor/bin/behat` - Run acceptance tests (all)
-- `vendor/bin/behat --tags="@cli"` - CLI acceptance tests
-- `vendor/bin/behat --tags="~@javascript"` - Non-JS acceptance tests
-- `vendor/bin/behat --tags="@javascript"` - JavaScript acceptance tests
 
 ### QA Tools (via Docker)
 - `docker compose exec app vendor/bin/ecs check` - Code style validation (PSR-12)
