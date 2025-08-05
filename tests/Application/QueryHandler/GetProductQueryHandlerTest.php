@@ -7,9 +7,11 @@ namespace App\Tests\Application\QueryHandler;
 use App\Product\Application\Query\GetProductQuery;
 use App\Product\Application\QueryHandler\GetProductQueryHandler;
 use App\Product\Domain\Product;
+use App\Product\Domain\ProductId;
 use App\Product\Domain\Repository\ProductRepositoryInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Uid\Uuid;
 
 class GetProductQueryHandlerTest extends TestCase
 {
@@ -26,7 +28,7 @@ class GetProductQueryHandlerTest extends TestCase
 
     public function testHandle(): void
     {
-        $productId = '123';
+        $productId = ProductId::fromString(Uuid::v4()->toString());
         $product = new Product($productId, 'Test Product', 'This is a test product.', 19.99);
 
         // Expect the repository's findById method to be called with the correct ID
@@ -45,7 +47,7 @@ class GetProductQueryHandlerTest extends TestCase
 
     public function testHandleProductNotFound(): void
     {
-        $productId = 'nonexistent_id';
+        $productId = ProductId::fromString(Uuid::v4()->toString());
 
         // Expect the repository's findById method to be called and return null
         $this->productRepository

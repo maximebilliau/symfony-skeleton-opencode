@@ -9,8 +9,9 @@ use Webmozart\Assert\Assert;
 
 trait IdentifierTrait
 {
-    private function __construct(private readonly string $id)
-    {
+    private function __construct(
+        private readonly string $id
+    ) {
         Assert::uuid($id);
     }
 

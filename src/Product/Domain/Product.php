@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Product\Domain;
 
-use Symfony\Component\Uid\Uuid;
-
 final class Product
 {
     public function __construct(

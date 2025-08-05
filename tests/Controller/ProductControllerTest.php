@@ -6,107 +6,153 @@ namespace App\Tests\Controller;
 
 use App\Product\Application\Command\CreateProductCommand;
 use App\Product\Application\Query\GetProductQuery;
-use App\Product\Domain\Product;
-use App\Product\Domain\Repository\ProductRepositoryInterface;
+use App\Product\Domain\ProductId;
+use App\Shared\Application\Bus\Command\CommandBus;
+use App\Shared\Application\Bus\Query\QueryBus;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Uid\Uuid;
 
 class ProductControllerTest extends WebTestCase
 {
-    private KernelBrowser $client;
-    private MockObject|MessageBusInterface $messageBus;
-    private MockObject|ProductRepositoryInterface $productRepository;
+    private CommandBus|MockObject $commandBus;
+    private QueryBus|MockObject $queryBus;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->client = static::createClient();
-
-        // Mock the MessageBus and ProductRepository
-        $this->messageBus = $this->createMock(MessageBusInterface::class);
-        $this->productRepository = $this->createMock(ProductRepositoryInterface::class);
-
-        // Replace the real services with their mocks
-        static::getContainer()->set(MessageBusInterface::class, $this->messageBus);
-        static::getContainer()->set(ProductRepositoryInterface::class, $this->productRepository);
+        // Créer les mocks des bus
+        $this->commandBus = $this->createMock(CommandBus::class);
+        $this->queryBus = $this->createMock(QueryBus::class);
     }
 
-    public function testCreateProduct(): void
+    private function createClientWithMockedServices(): KernelBrowser
     {
+        $client = static::createClient();
+
+        // Remplacer les services dans le conteneur
+        self::getContainer()->set(CommandBus::class, $this->commandBus);
+        self::getContainer()->set(QueryBus::class, $this->queryBus);
+
+        return $client;
+    }
+
+    public function testCreateProductSuccess(): void
+    {
+        $client = $this->createClientWithMockedServices();
+
+        // Données du produit à créer
         $productData = [
             'name' => 'Test Product',
-            'description' => 'This is a test product.',
-            'price' => 19.99,
+            'description' => 'Test Description',
+            'price' => 99.99,
         ];
 
-        // Expect the CreateProductCommand to be dispatched
-        $this->messageBus
+        // Vérifier que le command bus est appelé avec la bonne commande
+        $this->commandBus
             ->expects($this->once())
             ->method('dispatch')
-            ->with($this->isInstanceOf(CreateProductCommand::class));
+            ->with($this->callback(fn (CreateProductCommand $command) => $command->name === $productData['name']
+                && $command->description === $productData['description']
+                && $command->price === $productData['price']));
 
-        $this->client->request('POST', '/products', [], [], [
-            'CONTENT_TYPE' => 'application/json',
-        ], json_encode($productData));
+        // Faire la requête POST
+        $client->request(
+            'POST',
+            '/products',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+            ],
+            json_encode($productData)
+        );
 
-        $this->assertEquals(201, $this->client->getResponse()->getStatusCode());
-        $this->assertJsonStringEqualsJsonString('{"message": "Product created successfully"}', $this->client->getResponse()->getContent());
+        $response = $client->getResponse();
+        $responseData = json_decode($response->getContent(), true);
+
+        // Assertions
+        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+        $this->assertEquals('Product created successfully', $responseData['message']);
     }
 
-    public function testGetProduct(): void
+    public function testGetProductSuccess(): void
     {
-        $productId = '123';
-        $product = new Product($productId, 'Test Product', 'This is a test product.', 19.99);
+        $client = $this->createClientWithMockedServices();
+        $productId = 'fe4c6f31-cfa9-4924-b427-effe3da8e8d5';
 
-        // Expect the GetProductQuery to be dispatched and return a product
-        $this->messageBus
+        // Mock du produit retourné
+        $mockProduct = $this->createMockProduct();
+
+        // Configurer le query bus pour retourner le produit
+        $this->queryBus
             ->expects($this->once())
-            ->method('dispatch')
+            ->method('ask')
             ->with($this->isInstanceOf(GetProductQuery::class))
-            ->willReturn($product); // This return value needs to be adjusted based on how the message bus handles query results
+            ->willReturn($mockProduct);
 
-        // Mock the repository to return a product when findById is called
-        $this->productRepository
-            ->expects($this->once())
-            ->method('findById')
-            ->with($productId)
-            ->willReturn($product);
+        // Faire la requête GET
+        $client->request('GET', "/products/{$productId}");
 
-        $this->client->request('GET', '/products/' . $productId);
+        $response = $client->getResponse();
+        $responseData = json_decode($response->getContent(), true);
 
-        $this->assertEquals(200, $this->client->getResponse()->getStatusCode());
-        $this->assertJsonStringEqualsJsonString(json_encode([
-            'id' => $product->getId(),
-            'name' => $product->getName(),
-            'description' => $product->getDescription(),
-            'price' => $product->getPrice(),
-        ]), $this->client->getResponse()->getContent());
+        // Assertions
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertEquals('fe4c6f31-cfa9-4924-b427-effe3da8e8d5', $responseData['id']);
+        $this->assertEquals('Test Product', $responseData['name']);
+        $this->assertEquals('Test Description', $responseData['description']);
+        $this->assertEqualsWithDelta(99.99, $responseData['price'], PHP_FLOAT_EPSILON);
     }
 
     public function testGetProductNotFound(): void
     {
-        $productId = 'nonexistent_id';
+        $client = $this->createClientWithMockedServices();
+        $productId = Uuid::v4();
 
-        // Expect the GetProductQuery to be dispatched and return null
-        $this->messageBus
+        // Configurer le query bus pour retourner null
+        $this->queryBus
             ->expects($this->once())
-            ->method('dispatch')
+            ->method('ask')
             ->with($this->isInstanceOf(GetProductQuery::class))
-            ->willReturn(null); // Adjust if your query bus returns a different structure for not found
-
-        // Mock the repository to return null when findById is called
-        $this->productRepository
-            ->expects($this->once())
-            ->method('findById')
-            ->with($productId)
             ->willReturn(null);
 
-        $this->client->request('GET', '/products/' . $productId);
+        // Faire la requête GET
+        $client->request('GET', "/products/{$productId}");
 
-        $this->assertEquals(404, $this->client->getResponse()->getStatusCode());
-        $this->assertJsonStringEqualsJsonString('{"message": "Product not found"}', $this->client->getResponse()->getContent());
+        $response = $client->getResponse();
+        $responseData = json_decode($response->getContent(), true);
+
+        // Assertions
+        $this->assertEquals(Response::HTTP_NOT_FOUND, $response->getStatusCode());
+        $this->assertEquals('Product not found', $responseData['message']);
+    }
+
+    private function createMockProduct(): object
+    {
+        return new class {
+            public function getId(): ProductId
+            {
+                return ProductId::fromString('fe4c6f31-cfa9-4924-b427-effe3da8e8d5');
+            }
+
+            public function getName(): string
+            {
+                return 'Test Product';
+            }
+
+            public function getDescription(): string
+            {
+                return 'Test Description';
+            }
+
+            public function getPrice(): float
+            {
+                return 99.99;
+            }
+        };
     }
 }

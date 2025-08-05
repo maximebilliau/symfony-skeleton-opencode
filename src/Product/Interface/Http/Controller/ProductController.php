@@ -6,6 +6,7 @@ namespace App\Product\Interface\Http\Controller;
 
 use App\Product\Application\Command\CreateProductCommand;
 use App\Product\Application\Query\GetProductQuery;
+use App\Product\Domain\ProductId;
 use App\Shared\Application\Bus\Command\CommandBus;
 use App\Shared\Application\Bus\Query\QueryBus;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,7 +14,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use App\Product\Domain\ProductId;
 
 class ProductController extends AbstractController
 {
@@ -53,7 +53,7 @@ class ProductController extends AbstractController
         }
 
         return $this->json([
-            'id' => $product->getId(),
+            'id' => $product->getId()->toString(),
             'name' => $product->getName(),
             'description' => $product->getDescription(),
             'price' => $product->getPrice(),

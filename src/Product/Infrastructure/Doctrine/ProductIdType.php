@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Product\Infrastructure\Doctrine;
 
-
 use App\Product\Domain\ProductId;
 use App\Shared\Infrastructure\Doctrine\IdType;
 

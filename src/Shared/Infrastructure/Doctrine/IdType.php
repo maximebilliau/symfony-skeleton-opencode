@@ -7,13 +7,12 @@ namespace App\Shared\Infrastructure\Doctrine;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\DBAL\Types\Type;
-use UnexpectedValueException;
 
 abstract class IdType extends Type
 {
     public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
     {
-        return $platform->getVarcharTypeDeclarationSQL($column);
+        return $platform->getStringTypeDeclarationSQL($column);
     }
 
     public function convertToPHPValue($value, AbstractPlatform $platform): mixed
@@ -33,7 +32,7 @@ abstract class IdType extends Type
         try {
             /** @psalm-suppress MixedAssignment */
             $identifier = \call_user_func_array([$this->getIdentifierClass(), 'fromString'], [$value]);
-        } catch (UnexpectedValueException) {
+        } catch (\UnexpectedValueException) {
             throw ConversionException::conversionFailed($value, $this->getName());
         }
 

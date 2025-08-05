@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Product\Application\CommandHandler;
 
+use App\Product\Application\Command\CreateProductCommand;
+use App\Product\Domain\Product;
 use App\Product\Domain\ProductId;
-use Symfony\Component\Uid\UuidV4;
+use App\Product\Domain\Repository\ProductRepositoryInterface;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Uid\Uuid;
 
 #[AsMessageHandler]
 final readonly class CreateProductCommandHandler
@@ -18,7 +22,7 @@ final readonly class CreateProductCommandHandler
     public function __invoke(CreateProductCommand $command): void
     {
         $product = new Product(
-            id: new ProductId(value: (string) new UuidV4()),
+            id: ProductId::fromString(Uuid::v4()->toString()),
             name: $command->getName(),
             description: $command->getDescription(),
             price: $command->getPrice()
