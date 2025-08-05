@@ -42,7 +42,7 @@ jobs:
       run: vendor/bin/rector process src --config=rector.php --no-progress-bar --clear-cache # Assuming rector.php is your config file
 
     - name: Run PHPStan
-      run: vendor/bin/phpstan analyse src --configuration=phpstan.dist.neon --level=8 # Adjust level as needed
+      run: vendor/bin/phpstan analyse src --configuration=phpstan.dist.neon # Adjust level as needed
 
     - name: Run PHPUnit tests
       run: vendor/bin/phpunit --configuration=phpunit.dist.xml --colors=never

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Product\Application\Command\CreateProductCommand;
+use App\Product\Application\DTO\ProductData;
 use App\Product\Application\Query\GetProductQuery;
 use App\Product\Domain\ProductId;
 use App\Shared\Application\Bus\Command\CommandBus;
@@ -44,22 +45,16 @@ class ProductControllerTest extends WebTestCase
     {
         $client = $this->createClientWithMockedServices();
 
-        // Données du produit à créer
-        $productData = [
-            'name' => 'Test Product',
-            'description' => 'Test Description',
-            'price' => 99.99,
-        ];
+        $productData = new ProductData('Test Product', 'Test Description', 99.99);
 
-        // Vérifier que le command bus est appelé avec la bonne commande
+        /** @phpstan-ignore method.notFound */
         $this->commandBus
             ->expects($this->once())
             ->method('dispatch')
-            ->with($this->callback(fn (CreateProductCommand $command) => $command->name === $productData['name']
-                && $command->description === $productData['description']
-                && $command->price === $productData['price']));
+            ->with($this->callback(fn (CreateProductCommand $command): bool => $command->productData->name === 'Test Product'
+                && $command->productData->description === 'Test Description'
+                && $command->productData->price === 99.99));
 
-        // Faire la requête POST
         $client->request(
             'POST',
             '/products',
@@ -68,15 +63,16 @@ class ProductControllerTest extends WebTestCase
             [
                 'CONTENT_TYPE' => 'application/json',
             ],
-            json_encode($productData)
+            json_encode($productData) ?: null
         );
 
         $response = $client->getResponse();
-        $responseData = json_decode($response->getContent(), true);
+        /** @var array<string, string> $responseData */
+        $responseData = json_decode($response->getContent() ?: '', true);
 
         // Assertions
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
-        $this->assertEquals('Product created successfully', $responseData['message']);
+        $this->assertSame('Product created successfully', $responseData['message']);
     }
 
     public function testGetProductSuccess(): void
@@ -84,21 +80,21 @@ class ProductControllerTest extends WebTestCase
         $client = $this->createClientWithMockedServices();
         $productId = 'fe4c6f31-cfa9-4924-b427-effe3da8e8d5';
 
-        // Mock du produit retourné
         $mockProduct = $this->createMockProduct();
 
-        // Configurer le query bus pour retourner le produit
+        /** @phpstan-ignore method.notFound */
         $this->queryBus
             ->expects($this->once())
             ->method('ask')
             ->with($this->isInstanceOf(GetProductQuery::class))
             ->willReturn($mockProduct);
 
-        // Faire la requête GET
         $client->request('GET', "/products/{$productId}");
 
         $response = $client->getResponse();
-        $responseData = json_decode($response->getContent(), true);
+
+        /** @var array<string, string|float> $responseData */
+        $responseData = json_decode($response->getContent() ?: '', true);
 
         // Assertions
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
@@ -113,18 +109,18 @@ class ProductControllerTest extends WebTestCase
         $client = $this->createClientWithMockedServices();
         $productId = Uuid::v4();
 
-        // Configurer le query bus pour retourner null
+        /** @phpstan-ignore method.notFound */
         $this->queryBus
             ->expects($this->once())
             ->method('ask')
             ->with($this->isInstanceOf(GetProductQuery::class))
             ->willReturn(null);
 
-        // Faire la requête GET
         $client->request('GET', "/products/{$productId}");
 
         $response = $client->getResponse();
-        $responseData = json_decode($response->getContent(), true);
+        /** @var array<string, string> $responseData */
+        $responseData = json_decode($response->getContent() ?: '', true);
 
         // Assertions
         $this->assertEquals(Response::HTTP_NOT_FOUND, $response->getStatusCode());

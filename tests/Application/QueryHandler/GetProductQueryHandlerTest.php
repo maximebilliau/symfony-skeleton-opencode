@@ -31,7 +31,7 @@ class GetProductQueryHandlerTest extends TestCase
         $productId = ProductId::fromString(Uuid::v4()->toString());
         $product = new Product($productId, 'Test Product', 'This is a test product.', 19.99);
 
-        // Expect the repository's findById method to be called with the correct ID
+        /** @phpstan-ignore method.notFound */
         $this->productRepository
             ->expects($this->once())
             ->method('findById')
@@ -49,7 +49,7 @@ class GetProductQueryHandlerTest extends TestCase
     {
         $productId = ProductId::fromString(Uuid::v4()->toString());
 
-        // Expect the repository's findById method to be called and return null
+        /** @phpstan-ignore method.notFound */
         $this->productRepository
             ->expects($this->once())
             ->method('findById')

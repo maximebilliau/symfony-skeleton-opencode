@@ -30,7 +30,7 @@ abstract class IdType extends Type
         }
 
         try {
-            /** @psalm-suppress MixedAssignment */
+            /** @phpstan-ignore argument.type */
             $identifier = \call_user_func_array([$this->getIdentifierClass(), 'fromString'], [$value]);
         } catch (\UnexpectedValueException) {
             throw ConversionException::conversionFailed($value, $this->getName());
@@ -46,7 +46,7 @@ abstract class IdType extends Type
         }
 
         if (\is_object($value) && $value::class === $this->getIdentifierClass()) {
-            /** @psalm-suppress MixedMethodCall */
+            /** @phpstan-ignore method.notFound */
             return $value->toString();
         }
 
@@ -54,7 +54,7 @@ abstract class IdType extends Type
             return $value;
         }
 
-        throw ConversionException::conversionFailed((string) $value, $this->getName());
+        throw ConversionException::conversionFailed($value, $this->getName());
     }
 
     public function requiresSQLCommentHint(AbstractPlatform $platform): bool

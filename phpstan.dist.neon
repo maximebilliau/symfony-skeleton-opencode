@@ -1,8 +1,22 @@
 parameters:
-    level: 6
+    level: max
     paths:
         - bin/
         - config/
         - public/
         - src/
         - tests/
+
+    disallowedFunctionCalls:
+        -
+            function: 'dump()'
+            message: 'use logger instead'
+        -
+            function: 'dd()'
+            message: 'We should never die !'
+        -
+            function: 'die()'
+            message: 'We should never die !'
+
+includes:
+    - vendor/spaze/phpstan-disallowed-calls/extension.neon

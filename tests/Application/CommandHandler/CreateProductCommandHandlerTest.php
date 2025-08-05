@@ -6,6 +6,7 @@ namespace App\Tests\Application\CommandHandler;
 
 use App\Product\Application\Command\CreateProductCommand;
 use App\Product\Application\CommandHandler\CreateProductCommandHandler;
+use App\Product\Application\DTO\ProductData;
 use App\Product\Domain\Product;
 use App\Product\Domain\Repository\ProductRepositoryInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -26,15 +27,15 @@ class CreateProductCommandHandlerTest extends TestCase
 
     public function testHandle(): void
     {
-        $command = new CreateProductCommand('Test Product', 'This is a test product.', 19.99);
+        $productData = new ProductData('Test Product', 'This is a test product.', 19.99);
+        $command = new CreateProductCommand($productData);
 
-        // Expect the repository's save method to be called with a Product object
+        /** @phpstan-ignore method.notFound */
         $this->productRepository
             ->expects($this->once())
             ->method('save')
             ->with($this->isInstanceOf(Product::class));
 
-        // Call the handler
         ($this->handler)($command);
     }
 }

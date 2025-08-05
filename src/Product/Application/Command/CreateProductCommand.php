@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace App\Product\Application\Command;
 
+use App\Product\Application\DTO\ProductData;
+
 final readonly class CreateProductCommand
 {
     public function __construct(
-        public string $name,
-        public string $description,
-        public float $price
+        public ProductData $productData
     ) {
     }
 
     public function getName(): string
     {
-        return $this->name;
+        return $this->productData->name;
     }
 
     public function getDescription(): string
     {
-        return $this->description;
+        return $this->productData->description;
     }
 
     public function getPrice(): float
     {
-        return $this->price;
+        return $this->productData->price;
     }
 }

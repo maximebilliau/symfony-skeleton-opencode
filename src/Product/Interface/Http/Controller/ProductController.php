@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Product\Interface\Http\Controller;
 
 use App\Product\Application\Command\CreateProductCommand;
+use App\Product\Application\DTO\ProductData;
 use App\Product\Application\Query\GetProductQuery;
+use App\Product\Domain\Product;
 use App\Product\Domain\ProductId;
 use App\Shared\Application\Bus\Command\CommandBus;
 use App\Shared\Application\Bus\Query\QueryBus;
@@ -26,12 +28,8 @@ class ProductController extends AbstractController
     #[Route('/products', name: 'app_product_create', methods: ['POST'])]
     public function createProduct(Request $request): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-
         $command = new CreateProductCommand(
-            name: $data['name'],
-            description: $data['description'],
-            price: $data['price']
+            ProductData::fromJson($request->getContent()),
         );
 
         $this->commandBus->dispatch($command);
@@ -44,6 +42,7 @@ class ProductController extends AbstractController
     #[Route('/products/{id}', name: 'app_product_get', methods: ['GET'])]
     public function getProduct(string $id): JsonResponse
     {
+        /** @var Product|null $product */
         $product = $this->queryBus->ask(new GetProductQuery(ProductId::fromString($id)));
 
         if ($product === null) {
