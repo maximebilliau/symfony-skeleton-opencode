@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ] # Or your default branch
+  pull_request:
+    branches: [ main ] # Or your default branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3' # Ensure this matches your project's PHP version
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, apcu, zip # Add any other extensions your project needs
+        tools: composer, phpcs, phpstan, ecs, rector # Install tools directly
+
+    - name: Validate composer.json
+      run: composer validate --strict
+
+    - name: Install Composer dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
+
+    - name: Run ECS (EasyCodingStandard)
+      run: vendor/bin/ecs --config=ecs.php --no-progress-bar --clear-cache # Assuming ecs.php is your config file
+
+    - name: Run Rector
+      run: vendor/bin/rector process src --config=rector.php --no-progress-bar --clear-cache # Assuming rector.php is your config file
+
+    - name: Run PHPStan
+      run: vendor/bin/phpstan analyse src --configuration=phpstan.dist.neon --level=8 # Adjust level as needed
+
+    - name: Run PHPUnit tests
+      run: vendor/bin/phpunit --configuration=phpunit.dist.xml --colors=never
