@@ -1,4 +1,6 @@
 {
+    "name": "maximebilliau/skeleton",
+    "description": "A DDD/hexa skeleton created and configured with opencode.",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
