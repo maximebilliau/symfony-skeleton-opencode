@@ -14,7 +14,7 @@ class LoginControllerTest extends WebTestCase
 
     public function testLogin(): void
     {
-        $this->request(
+        $response = $this->request(
             method: 'POST',
             uri: '/api/login',
             content: json_encode([
@@ -26,6 +26,10 @@ class LoginControllerTest extends WebTestCase
             ],
         );
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+        $this->assertJson($response->getContent() ?: '');
+        /** @var array<string, mixed> $responseData */
+        $responseData = json_decode($response->getContent() ?: '', true);
+        $this->assertArrayHasKey('token', $responseData);
 
         $this->request(
             method: 'POST',

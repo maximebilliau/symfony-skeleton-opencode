@@ -9,7 +9,7 @@ use App\User\Application\CommandHandler\LoginHandler;
 use App\User\Domain\User;
 use App\User\Domain\UserId;
 use App\User\Infrastructure\Repository\UserRepository;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use App\User\Infrastructure\Security\JWTTokenManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;

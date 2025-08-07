@@ -6,7 +6,7 @@ namespace App\User\Application\CommandHandler;
 
 use App\User\Application\Command\LoginCommand;
 use App\User\Domain\Repository\UserRepositoryInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use App\User\Infrastructure\Security\JWTTokenManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;

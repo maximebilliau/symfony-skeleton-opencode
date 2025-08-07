@@ -12,10 +12,15 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-class LoginController extends AbstractController
+#[Route('/api/login', name: 'api_login', methods: ['POST'])]
+final class LoginController extends AbstractController
 {
-    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
-    public function login(Request $request, CommandBus $commandBus): JsonResponse
+    public function __construct(
+        private readonly CommandBus $commandBus
+    ) {
+    }
+
+    public function __invoke(Request $request): JsonResponse
     {
         $user = UserData::fromJson($request->getContent());
 
@@ -26,9 +31,11 @@ class LoginController extends AbstractController
         }
 
         try {
-            $result = $commandBus->dispatch(new LoginCommand($user->email, $user->password));
+            $result = $this->commandBus->dispatch(new LoginCommand($user->email, $user->password));
 
-            return new JsonResponse($result);
+            return new JsonResponse([
+                'token' => $result,
+            ]);
         } catch (\Exception $e) {
             return new JsonResponse([
                 'message' => $e->getMessage(),
