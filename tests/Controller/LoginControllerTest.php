@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\tests\Controller;
+namespace App\Tests\Controller;
 
 use App\Tests\FixturesTrait;
 use App\Tests\Integration\Common\Infrastructure\WebTestCase;
@@ -14,6 +14,8 @@ class LoginControllerTest extends WebTestCase
 
     public function testLogin(): void
     {
+        $this->loadFixtures();
+
         $response = $this->request(
             method: 'POST',
             uri: '/api/login',

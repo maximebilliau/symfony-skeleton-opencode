@@ -24,25 +24,79 @@ jobs:
     - name: Validate composer.json
       run: composer validate --strict
 
-    - name: Install Composer dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+    - name: Get Composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
     - name: Cache Composer dependencies
       uses: actions/cache@v3
       with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
         restore-keys: |
-          ${{ runner.os }}-php-
+          ${{ runner.os }}-composer-
+
+    - name: Install Composer dependencies
+      run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+    - name: Cache PHPStan
+      uses: actions/cache@v3
+      with:
+        path: var/cache/phpstan
+        key: ${{ runner.os }}-phpstan-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-phpstan-
+
+    - name: Cache Rector
+      uses: actions/cache@v3
+      with:
+        path: var/cache/rector
+        key: ${{ runner.os }}-rector-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-rector-
+
+    - name: Setup environment
+      run: |
+        mkdir -p var/data config/jwt
+        echo "APP_ENV=test" >> .env.test
+        echo "KERNEL_CLASS=App\\Kernel" >> .env.test
+        echo "APP_SECRET=\$ecretf0rt3st" >> .env.test
+        echo "DATABASE_URL=sqlite:///$(pwd)/var/data/test.db" >> .env.test
+        echo "JWT_SECRET_KEY=$(pwd)/config/jwt/private.pem" >> .env.test
+        echo "JWT_PUBLIC_KEY=$(pwd)/config/jwt/public.pem" >> .env.test
+        echo "JWT_PASSPHRASE=testpassphrase" >> .env.test
+
+    - name: Generate JWT keys
+      run: |
+        openssl genrsa -out config/jwt/private.pem -passout pass:testpassphrase 4096
+        openssl rsa -pubout -in config/jwt/private.pem -out config/jwt/public.pem -passin pass:testpassphrase
+
+    - name: Cache Symfony application
+      run: |
+        php bin/console cache:warmup --env=test
+        php bin/console cache:clear --env=test
+
+    - name: Setup database schema
+      run: |
+        php bin/console doctrine:schema:create --env=test
+        php bin/console doctrine:fixtures:load --env=test --no-interaction
+
+    - name: Debug environment
+      run: |
+        php -v
+        php -m | head -20
+        composer --version
+        pwd
+        ls -la
 
     - name: Run ECS (EasyCodingStandard)
       run: vendor/bin/ecs --config=ecs.php --no-progress-bar --clear-cache # Assuming ecs.php is your config file
 
     - name: Run Rector
-      run: vendor/bin/rector process src --config=rector.php --no-progress-bar --clear-cache # Assuming rector.php is your config file
+      run: vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --memory-limit=512M
 
     - name: Run PHPStan
-      run: vendor/bin/phpstan analyse src --configuration=phpstan.dist.neon # Adjust level as needed
+      run: vendor/bin/phpstan analyse --configuration=phpstan.dist.neon --memory-limit=512M --error-format=github
 
     - name: Run PHPUnit tests
       run: vendor/bin/phpunit --configuration=phpunit.dist.xml --colors=never

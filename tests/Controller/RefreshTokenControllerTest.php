@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\tests\Controller;
+namespace App\Tests\Controller;
 
 use App\Tests\FixturesTrait;
 use App\Tests\Integration\Common\Infrastructure\WebTestCase;
@@ -14,6 +14,8 @@ class RefreshTokenControllerTest extends WebTestCase
 
     public function testRefreshTokenWithValidToken(): void
     {
+        $this->loadFixtures();
+
         // First, get a valid token by logging in
         $response = $this->request(
             method: 'POST',
@@ -33,6 +35,7 @@ class RefreshTokenControllerTest extends WebTestCase
         $token = $loginResponse['token'] ?? null;
 
         $this->assertNotNull($token, 'Token should be returned from login');
+        $this->assertIsString($token, 'Token should be a string');
 
         // Now test the refresh endpoint with the valid token
         $response = $this->request(
@@ -43,6 +46,7 @@ class RefreshTokenControllerTest extends WebTestCase
             ]) ?: '',
             headers: [
                 'CONTENT_TYPE' => 'application/json',
+                'Authorization' => 'Bearer ' . $token,
             ],
         );
 
