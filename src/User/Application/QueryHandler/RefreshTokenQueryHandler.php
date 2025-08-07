@@ -40,7 +40,7 @@ final readonly class RefreshTokenQueryHandler
 
             return $this->jwtTokenManager->create($user);
         } catch (\InvalidArgumentException $e) {
-            throw new AuthenticationException('Invalid token structure: ' . $e->getMessage());
+            throw new AuthenticationException('Invalid token structure: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 }

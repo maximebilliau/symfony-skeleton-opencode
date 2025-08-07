@@ -6,6 +6,14 @@ parameters:
         - public/
         - src/
         - tests/
+    
+    tmpDir: var/cache/phpstan
+    
+    bootstrapFiles:
+        - vendor/autoload.php
+
+    symfony:
+        consoleApplicationLoader: bin/console
 
     disallowedFunctionCalls:
         -
@@ -20,3 +28,5 @@ parameters:
 
 includes:
     - vendor/spaze/phpstan-disallowed-calls/extension.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon

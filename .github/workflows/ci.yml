@@ -25,7 +25,7 @@ jobs:
       run: composer validate --strict
 
     - name: Install Composer dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
     - name: Cache Composer dependencies
       uses: actions/cache@v3
@@ -35,14 +35,48 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-
 
+    - name: Cache PHPStan
+      uses: actions/cache@v3
+      with:
+        path: var/cache/phpstan
+        key: ${{ runner.os }}-phpstan-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-phpstan-
+
+    - name: Cache Rector
+      uses: actions/cache@v3
+      with:
+        path: var/cache/rector
+        key: ${{ runner.os }}-rector-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-rector-
+
+    - name: Setup environment
+      run: |
+        cp .env .env.test
+        echo "APP_ENV=test" >> .env.test
+
+    - name: Cache Symfony application
+      run: |
+        php bin/console cache:warmup --env=test
+        php bin/console cache:clear --env=test
+
+    - name: Debug environment
+      run: |
+        php -v
+        php -m | head -20
+        composer --version
+        pwd
+        ls -la
+
     - name: Run ECS (EasyCodingStandard)
       run: vendor/bin/ecs --config=ecs.php --no-progress-bar --clear-cache # Assuming ecs.php is your config file
 
     - name: Run Rector
-      run: vendor/bin/rector process src --config=rector.php --no-progress-bar --clear-cache # Assuming rector.php is your config file
+      run: vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --memory-limit=512M
 
     - name: Run PHPStan
-      run: vendor/bin/phpstan analyse src --configuration=phpstan.dist.neon # Adjust level as needed
+      run: vendor/bin/phpstan analyse --configuration=phpstan.dist.neon --memory-limit=512M --error-format=github
 
     - name: Run PHPUnit tests
       run: vendor/bin/phpunit --configuration=phpunit.dist.xml --colors=never
