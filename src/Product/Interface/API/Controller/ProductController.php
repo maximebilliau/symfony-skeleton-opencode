@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Product\Interface\Http\Controller;
+namespace App\Product\Interface\API\Controller;
 
 use App\Product\Application\Command\CreateProductCommand;
 use App\Product\Application\DTO\ProductData;
@@ -25,7 +25,7 @@ class ProductController extends AbstractController
     ) {
     }
 
-    #[Route('/products', name: 'app_product_create', methods: ['POST'])]
+    #[Route('/api/products', name: 'app_product_create', methods: ['POST'])]
     public function createProduct(Request $request): JsonResponse
     {
         $command = new CreateProductCommand(
@@ -39,7 +39,7 @@ class ProductController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-    #[Route('/products/{id}', name: 'app_product_get', methods: ['GET'])]
+    #[Route('/api/products/{id}', name: 'app_product_get', methods: ['GET'])]
     public function getProduct(string $id): JsonResponse
     {
         /** @var Product|null $product */

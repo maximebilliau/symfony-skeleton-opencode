@@ -1,62 +1,77 @@
+version: '3.8'
+
 services:
-  php:
-    build:
-      context: docker/php
-      dockerfile: Dockerfile
-    container_name: skeleton_php
-    volumes:
-      - ./:/var/www/skeleton
-    depends_on:
-      - db
-    networks:
-      - skeleton-network
+    traefik:
+        image: traefik:v3.0
+        container_name: skeleton_traefik
+        command:
+            - "--api.insecure=true"
+            - "--providers.docker=true"
+            - "--providers.docker.exposedbydefault=false"
+            - "--entrypoints.web.address=:80"
+            - "--entrypoints.websecure.address=:443"
+        ports:
+            - "80:80"
+            - "443:443"
+            - "8080:8080"  # Dashboard Traefik
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+        networks:
+            - skeleton-network
 
-  db:
-    image: postgres:16.6-bookworm
-    container_name: skeleton_db
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: skeleton
-      POSTGRES_USER: ${POSTGRES_USER:-root}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
-    ports:
-        - ${APP_DATABASE_PORT:-5432}:5432
-    networks:
-      - skeleton-network
+    php:
+        build:
+            context: docker/php
+            dockerfile: Dockerfile
+        container_name: skeleton_php
+        volumes:
+            - ./:/var/www/skeleton:cached
+        environment:
+            - DATABASE_URL=postgresql://root:root@db:5432/skeleton
+        depends_on:
+            db:
+                condition: service_healthy
+        networks:
+            - skeleton-network
 
-  nginx:
-    image: nginx:alpine
-    container_name: skeleton_nginx
-    volumes:
-      - ./:/var/www/skeleton
-      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
-    labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.symfony.rule=Host(`skeleton.localhost`)"  # Remplacez par votre domaine
-        - "traefik.http.services.symfony.loadbalancer.server.port=80"
-    networks:
-      - skeleton-network
-    depends_on:
-        -   php
+    db:
+        image: postgres:16-alpine
+        container_name: skeleton_db
+        volumes:
+            - skeleton_db_data:/var/lib/postgresql/data
+        environment:
+            POSTGRES_DB: skeleton
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+        ports:
+            - "5432:5432"
+        networks:
+            - skeleton-network
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U root -d skeleton"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
 
-  traefik:
-      image: traefik:v2.10
-      container_name: skeleton-traefik
-      command:
-          - "--api.insecure=true"
-          - "--providers.docker=true"
-          - "--entrypoints.web.address=:80"
-      ports:
-          - "80:80"
-          - "8080:8080"
-      volumes:
-          - "/var/run/docker.sock:/var/run/docker.sock"
-      networks:
-          - skeleton-network
+    nginx:
+        image: nginx:alpine
+        container_name: skeleton_nginx
+        volumes:
+            - ./:/var/www/skeleton:cached
+            - ./docker/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+        networks:
+            - skeleton-network
+        depends_on:
+            - php
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.skeleton.rule=Host(`skeleton.localhost`)"
+            - "traefik.http.routers.skeleton.entrypoints=web"
+            - "traefik.http.services.skeleton.loadbalancer.server.port=80"
 
 volumes:
-  db_data:
+    skeleton_db_data:
 
 networks:
     skeleton-network:
+        driver: bridge

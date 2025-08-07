@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Shared\Infrastructure\Bus\Command;
 
 use App\Shared\Application\Bus\Command\CommandBus;
+use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\HandleTrait;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -17,8 +18,8 @@ final class MessengerCommandBus implements CommandBus
         $this->messageBus = $commandBus;
     }
 
-    public function dispatch(object $command): void
+    public function dispatch(object $command): Envelope
     {
-        $this->messageBus->dispatch($command);
+        return $this->messageBus->dispatch($command);
     }
 }

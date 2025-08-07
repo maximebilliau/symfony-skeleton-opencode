@@ -1,17 +1,16 @@
-FROM php:8.3-fpm
+FROM php:8.3-fpm-alpine
 
 # Installation des dépendances système
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     git \
     curl \
     libpng-dev \
-    libonig-dev \
+    oniguruma-dev \
     libxml2-dev \
-    libpq-dev \
+    postgresql-dev \
     zip \
     unzip \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    linux-headers
 
 # Installation des extensions PHP
 RUN docker-php-ext-install \
@@ -28,18 +27,21 @@ RUN docker-php-ext-install \
 # Installation de Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configuration PHP
+# Configuration PHP pour le développement
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.max_accelerated_files=4000" >> /usr/local/etc/php/conf.d/opcache.ini
+    && echo "opcache.validate_timestamps=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.revalidate_freq=0" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "memory_limit=512M" >> /usr/local/etc/php/conf.d/memory.ini \
+    && echo "upload_max_filesize=100M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size=100M" >> /usr/local/etc/php/conf.d/uploads.ini
 
-# Définir le répertoire de travail
-WORKDIR /var/www/html
+WORKDIR /var/www/skeleton
 
-# Changer le propriétaire des fichiers
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+# Créer l'utilisateur et ajuster les permissions
+RUN addgroup -g 1000 -S appgroup \
+    && adduser -u 1000 -D -S -G appgroup appuser \
+    && chown -R appuser:appgroup /var/www/skeleton
 
-USER www-data
+USER appuser
 
 EXPOSE 9000

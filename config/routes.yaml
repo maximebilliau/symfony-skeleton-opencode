@@ -1,5 +1,11 @@
-controllers:
+product_controllers:
     resource:
-        path: ../src/Product/Interface/Http/Controller/
-        namespace: App\Product\Interface\Http\Controller
+        path: ../src/Product/Interface/API/Controller/
+        namespace: App\Product\Interface\API\Controller
+    type: attribute
+
+user_controllers:
+    resource:
+        path: ../src/User/Interface/API/Controller/
+        namespace: App\User\Interface\API\Controller
     type: attribute
